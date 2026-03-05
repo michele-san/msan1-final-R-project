@@ -27,7 +27,7 @@ library(ROhdsiWebApi)
 library(Strategus)
 library(CohortIncidence)
 library(Characterization)
-
+library(Eunomia)
 
 dir.create("inst/settings", recursive = TRUE, showWarnings = FALSE)
 
@@ -49,8 +49,49 @@ cohortDefinitionSet <- ROhdsiWebApi::exportCohortDefinitionSet(
 
 cohortDefinitionSet[, c("cohortId", "cohortName")]
 
-# CohortDiagnostics
+# Connect to Eunomia (there will be 0 patients pulled for these cohorts)
+connectionDetails <- getEunomiaConnectionDetails()
+connection <- connect(connectionDetails)
+getTableNames(connection, databaseSchema = "main")
 
+# CohortGenerator creates the required cohort tables
+cohortTableNames <- getCohortTableNames(cohortTable = "my_cohort")
+
+createCohortTables(
+  connectionDetails = connectionDetails,
+  cohortDatabaseSchema = "main",
+  cohortTableNames = cohortTableNames
+)
+
+### Generate (instantiate) cohorts
+cohortsGenerated <- generateCohortSet(
+  connectionDetails = connectionDetails,
+  cdmDatabaseSchema = "main",
+  cohortDatabaseSchema = "main",
+  cohortTableNames = cohortTableNames,
+  cohortDefinitionSet = cohortDefinitionSet
+)
+
+### Verify cohort counts
+getCohortCounts(
+  connectionDetails = connectionDetails,
+  cohortDatabaseSchema = "main",
+  cohortTable = "my_cohort"
+)
+
+# Peek at the actual cohort table
+querySql(connection, "
+  SELECT
+    cohort_definition_id,
+    COUNT(*) AS n_entries,
+    COUNT(DISTINCT subject_id) AS n_subjects,
+    MIN(cohort_start_date) AS earliest_start,
+    MAX(cohort_start_date) AS latest_start
+  FROM main.my_cohort
+  GROUP BY cohort_definition_id
+")
+
+# CohortDiagnostics
 cgModule <- CohortGeneratorModule$new()
 
 cohortDefinitionSharedResource <- cgModule$createCohortSharedResourceSpecifications(
@@ -85,27 +126,27 @@ cohortDiagnosticsModuleSpecifications <- cdModule$createModuleSpecifications(
 ciModule <- CohortIncidenceModule$new()
 
 targets <- list(
-  CohortIncidence::createCohortRef(id = 1, name = "Covid vaccine"),
-  CohortIncidence::createCohortRef(id = 2, name = "No Covid vaccine")
+  CohortIncidence::createCohortRef(id = 1796434, name = "vaccine"),
+  CohortIncidence::createCohortRef(id = 1796435, name = "no vaccine")
 )
 
 outcomes <- list(
   CohortIncidence::createOutcomeDef(
     id = 1,
-    name = "Etoposide allergy",
-    cohortId = 3,          # default: 0 (must override)
+    name = "allergy",
+    cohortId = 1796456,          # default: 0 (must override)
     cleanWindow = 9999     # default: 0 (we set 9999 = one event per person)
   )
 )
 
 tars <- list(
   CohortIncidence::createTimeAtRiskDef(
-    id = 1,
+    id = 1796434,
     startWith = "start",   # default: "start"
     endWith = "end"        # default: "end"
   ),
   CohortIncidence::createTimeAtRiskDef(
-    id = 2,
+    id = 1796435,
     startWith = "start",   # default: "start"
     endWith = "start",     # override: anchor end to start
     endOffset = 365        # default: 0 (we set 365 for fixed 1-year window)
@@ -114,7 +155,7 @@ tars <- list(
 
 incidenceAnalysis <- CohortIncidence::createIncidenceAnalysis(
   targets = c(1, 2),
-  outcomes = c(3),
+  outcomes = c(1),
   tars = c(1, 2)
 )
 
@@ -132,3 +173,49 @@ irDesign <- CohortIncidence::createIncidenceDesign(
 cohortIncidenceModuleSpecifications <- ciModule$createModuleSpecifications(
   irDesign = irDesign$toList()
 )
+
+
+# Characterization
+
+cModule <- CharacterizationModule$new()
+
+characterizationModuleSpecifications <- cModule$createModuleSpecifications(
+  targetIds = c(1, 2),
+  outcomeIds = 3,
+  outcomeWashoutDays = c(365),                # default: c(365)
+  minPriorObservation = 365,                  # default: 365
+  dechallengeStopInterval = 30,               # default: 30
+  dechallengeEvaluationWindow = 30,           # default: 30
+  riskWindowStart = c(1, 1),                  # default: c(1, 1)
+  startAnchor = c("cohort start",             # default: c("cohort start",
+                  "cohort start"),             #            "cohort start")
+  riskWindowEnd = c(0, 365),                  # default: c(0, 365)
+  endAnchor = c("cohort end",                 # default: c("cohort end",
+                "cohort end"),                 #            "cohort end")
+  minCharacterizationMean = 0.01,             # default: 0.01
+  casePreTargetDuration = 365,                # default: 365
+  casePostOutcomeDuration = 365,              # default: 365
+  includeTimeToEvent = TRUE,                  # default: TRUE
+  includeDechallengeRechallenge = TRUE,       # default: TRUE
+  includeAggregateCovariate = TRUE            # default: TRUE
+  # covariateSettings     = <broad default: demographics, conditions, drugs,
+  #                          procedures, measurements at -365d and -30d windows>
+  # caseCovariateSettings = <during-exposure covariates: conditions, drugs,
+  #                          procedures, devices, measurements, observations>
+)
+
+#Create JSON
+
+analysisSpecifications <- createEmptyAnalysisSpecifications() |>
+  addSharedResources(cohortDefinitionSharedResource) |>
+  addModuleSpecifications(cohortGeneratorModuleSpecifications) |>
+  addModuleSpecifications(cohortDiagnosticsModuleSpecifications) |>
+  addModuleSpecifications(cohortIncidenceModuleSpecifications) |>
+  addModuleSpecifications(characterizationModuleSpecifications)
+
+ParallelLogger::saveSettingsToJson(
+  object = analysisSpecifications,
+  fileName = "inst/settings/EtoposideAnalysisSpecifications.json"
+)
+
+message("Analysis specification saved to: inst/settings/EtoposideAnalysisSpecifications.json")
