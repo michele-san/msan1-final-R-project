@@ -11,6 +11,7 @@
 #install and load
 install.packages(c("DatabaseConnector", "SqlRender", "dplyr"))
 install.packages("remotes")
+install.packages("Eunomia")
 remotes::install_github("OHDSI/ROhdsiWebApi")
 remotes::install_github("OHDSI/CohortGenerator")
 remotes::install_github("OHDSI/CohortDiagnostics")
