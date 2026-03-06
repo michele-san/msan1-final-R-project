@@ -8,7 +8,7 @@
 #   those who have received at least one Covid‑19 vaccination prior to etoposide 
 #   initiation compared with those who have not received any Covid‑19 vaccination?
 
-#install and load
+# Install and load
 install.packages(c("DatabaseConnector", "SqlRender", "dplyr"))
 install.packages("remotes")
 install.packages("Eunomia")
@@ -31,7 +31,7 @@ library(Eunomia)
 
 dir.create("inst/settings", recursive = TRUE, showWarnings = FALSE)
 
-#connect to ATLAS and test connection
+# Connect to ATLAS and test connection
 baseUrl <- "https://atlas-demo.ohdsi.org/WebAPI"
 # List available data sources on this WebAPI
 ROhdsiWebApi::getWebApiVersion(baseUrl = baseUrl)
@@ -63,7 +63,7 @@ createCohortTables(
   cohortTableNames = cohortTableNames
 )
 
-### Generate (instantiate) cohorts
+# Generate (instantiate) cohorts
 cohortsGenerated <- generateCohortSet(
   connectionDetails = connectionDetails,
   cdmDatabaseSchema = "main",
@@ -72,7 +72,7 @@ cohortsGenerated <- generateCohortSet(
   cohortDefinitionSet = cohortDefinitionSet
 )
 
-### Verify cohort counts
+# Verify cohort counts
 getCohortCounts(
   connectionDetails = connectionDetails,
   cohortDatabaseSchema = "main",
@@ -101,8 +101,8 @@ cohortDefinitionSharedResource <- cgModule$createCohortSharedResourceSpecificati
 cohortGeneratorModuleSpecifications <- cgModule$createModuleSpecifications(
   generateStats = TRUE                    # default: TRUE
 )
-# model specifications
 
+# Model specifications
 cdModule <- CohortDiagnosticsModule$new()
 
 cohortDiagnosticsModuleSpecifications <- cdModule$createModuleSpecifications(
@@ -122,7 +122,6 @@ cohortDiagnosticsModuleSpecifications <- cdModule$createModuleSpecifications(
 )
 
 # CohortIncidence
-
 ciModule <- CohortIncidenceModule$new()
 
 targets <- list(
@@ -174,9 +173,7 @@ cohortIncidenceModuleSpecifications <- ciModule$createModuleSpecifications(
   irDesign = irDesign$toList()
 )
 
-
 # Characterization
-
 cModule <- CharacterizationModule$new()
 
 characterizationModuleSpecifications <- cModule$createModuleSpecifications(
@@ -204,7 +201,7 @@ characterizationModuleSpecifications <- cModule$createModuleSpecifications(
   #                          procedures, devices, measurements, observations>
 )
 
-#Create JSON
+# Create JSON
 
 analysisSpecifications <- createEmptyAnalysisSpecifications() |>
   addSharedResources(cohortDefinitionSharedResource) |>
