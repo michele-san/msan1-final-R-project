@@ -131,7 +131,7 @@ targets <- list(
 
 outcomes <- list(
   CohortIncidence::createOutcomeDef(
-    id = 1,
+    id = 1796456,
     name = "allergy",
     cohortId = 1796456,          # default: 0 (must override)
     cleanWindow = 9999     # default: 0 (we set 9999 = one event per person)
@@ -140,12 +140,12 @@ outcomes <- list(
 
 tars <- list(
   CohortIncidence::createTimeAtRiskDef(
-    id = 1796434,
+    id = 1,
     startWith = "start",   # default: "start"
     endWith = "end"        # default: "end"
   ),
   CohortIncidence::createTimeAtRiskDef(
-    id = 1796435,
+    id = 2,
     startWith = "start",   # default: "start"
     endWith = "start",     # override: anchor end to start
     endOffset = 365        # default: 0 (we set 365 for fixed 1-year window)
@@ -153,8 +153,8 @@ tars <- list(
 )
 
 incidenceAnalysis <- CohortIncidence::createIncidenceAnalysis(
-  targets = c(1, 2),
-  outcomes = c(1),
+  targets = c(1796434, 1796435),
+  outcomes = c(1796456),
   tars = c(1, 2)
 )
 
