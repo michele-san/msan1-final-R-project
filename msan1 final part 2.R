@@ -43,14 +43,27 @@ ROhdsiWebApi::getWebApiVersion(baseUrl = baseUrl)
 cohortDefinitionSet <- ROhdsiWebApi::exportCohortDefinitionSet(
   baseUrl       = baseUrl,
   cohortIds     = c(
-    1796434, # Germ Cell Tumor treated with Etoposide + Covid Vaccine exposure
-    1796435,  # Germ cell tumor treated with Etoposide + NO Covid vaccine exposure
+    1796434, # Germ Cell Tumor + Covid Vaccine exposure
+    1796435,  # Germ cell tumor + NO Covid vaccine exposure
     1796456 # Etoposide allergy (Outcome cohort)
   ),
   generateStats = TRUE
 )
 
-cohortDefinitionSet[, c("cohortId", "cohortName")]
+cohortDefinitionSet <- cohortDefinitionSet |>
+  mutate(
+    cohortName = case_when(
+      cohortId == 1796434 ~ "Germ Cell Tumor + Covid Vaccine exposure",
+      cohortId == 1796435 ~ "Germ cell tumor + NO Covid vaccine exposure",
+      cohortId == 1796456 ~ "Etoposide allergy (Outcome cohort)",
+      TRUE ~ cohortName
+    ),
+    cohortId = case_when(
+      cohortId == 1796434 ~ 1, #target
+      cohortId == 1796435 ~ 2, #comparator
+      cohortId == 1796456 ~ 3 #outcome
+    )
+  )
 
 # Connect to Eunomia (there will be 0 patients pulled for these cohorts)
 connectionDetails <- getEunomiaConnectionDetails()
@@ -120,7 +133,7 @@ cohortDiagnosticsModuleSpecifications <- cdModule$createModuleSpecifications(
   runCohortRelationship = TRUE,               # default: TRUE
   runTemporalCohortCharacterization = TRUE,   # default: TRUE
   minCharacterizationMean = 0.01,             # default: 0.01
-  irWashoutPeriod = 0                         # default: 0
+  irWashoutPeriod = 365                         # default: 0
   # temporalCovariateSettings = <module default covariate settings>
 )
 
@@ -128,13 +141,13 @@ cohortDiagnosticsModuleSpecifications <- cdModule$createModuleSpecifications(
 ciModule <- CohortIncidenceModule$new()
 
 targets <- list(
-  CohortIncidence::createCohortRef(id = 1796434, name = "vaccine"),
-  CohortIncidence::createCohortRef(id = 1796435, name = "no vaccine")
+  CohortIncidence::createCohortRef(id = 1, name = "vaccine"),
+  CohortIncidence::createCohortRef(id = 2, name = "no vaccine")
 )
 
 outcomes <- list(
   CohortIncidence::createOutcomeDef(
-    id = 1796456,
+    id = 3,
     name = "allergy",
     cohortId = 1796456,          # default: 0 (must override)
     cleanWindow = 9999     # default: 0 (we set 9999 = one event per person)
@@ -156,8 +169,8 @@ tars <- list(
 )
 
 incidenceAnalysis <- CohortIncidence::createIncidenceAnalysis(
-  targets = c(1796434, 1796435),
-  outcomes = c(1796456),
+  targets = c(1, 2),
+  outcomes = c(3),
   tars = c(1, 2)
 )
 
@@ -168,7 +181,7 @@ irDesign <- CohortIncidence::createIncidenceDesign(
   analysisList = list(incidenceAnalysis),
   strataSettings = CohortIncidence::createStrataSettings(
     byYear = TRUE,         # default: FALSE
-    byGender = TRUE        # default: FALSE
+    byGender = FALSE        # default: FALSE
   )
 )
 
@@ -184,8 +197,8 @@ characterizationModuleSpecifications <- cModule$createModuleSpecifications(
   outcomeIds = 1796456,
   outcomeWashoutDays = c(365),                # default: c(365)
   minPriorObservation = 365,                  # default: 365
-  dechallengeStopInterval = 30,               # default: 30
-  dechallengeEvaluationWindow = 30,           # default: 30
+  dechallengeStopInterval = 9999,               # default: 30
+  dechallengeEvaluationWindow = 9999,           # default: 30
   riskWindowStart = c(1, 1),                  # default: c(1, 1)
   startAnchor = c("cohort start",             # default: c("cohort start",
                   "cohort start"),             #            "cohort start")
@@ -206,12 +219,6 @@ characterizationModuleSpecifications <- cModule$createModuleSpecifications(
 
 # CohortMethod (This is where part 2 assignment starts)
 
-# Ref: https://ohdsi.github.io/Strategus/reference/CohortMethodModule.html
-# See also: https://ohdsi.github.io/CohortMethod/
-#
-# Estimates comparative treatment effect between celecoxib and diclofenac
-# for the GI bleed outcome using a propensity-score stratified cohort design.
-#
 # createModuleSpecifications defaults:
 #   cmAnalysisList                  = <required>
 #   targetComparatorOutcomesList    = <required>
