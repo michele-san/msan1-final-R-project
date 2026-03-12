@@ -43,8 +43,8 @@ ROhdsiWebApi::getWebApiVersion(baseUrl = baseUrl)
 cohortDefinitionSet <- ROhdsiWebApi::exportCohortDefinitionSet(
   baseUrl       = baseUrl,
   cohortIds     = c(
-    1796434, # Germ Cell Tumor + Covid Vaccine exposure
-    1796435,  # Germ cell tumor + NO Covid vaccine exposure
+    1796434, #Germ cell tumor and Covid vaccine exposure
+    1796435,  # Germ cell tumor and no Covid vaccine exposure"
     1796456 # Etoposide allergy (Outcome cohort)
   ),
   generateStats = TRUE
@@ -53,9 +53,9 @@ cohortDefinitionSet <- ROhdsiWebApi::exportCohortDefinitionSet(
 cohortDefinitionSet <- cohortDefinitionSet |>
   mutate(
     cohortName = case_when(
-      cohortId == 1796434 ~ "Germ Cell Tumor + Covid Vaccine exposure",
-      cohortId == 1796435 ~ "Germ cell tumor + NO Covid vaccine exposure",
-      cohortId == 1796456 ~ "Etoposide allergy (Outcome cohort)",
+      cohortId == 1796434 ~ "Germ cell tumor and Covid vaccine exposure",
+      cohortId == 1796435 ~ "Germ cell tumor and Covid vaccine exposure",
+      cohortId == 1796456 ~ "Etoposide allergy",
       TRUE ~ cohortName
     ),
     cohortId = case_when(
