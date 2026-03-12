@@ -1,0 +1,4 @@
+atlas_id,cohort_id,cohort_name,logic_description,generate_stats
+1796434,1796434,Germ cell tumor and Covid vaccine exposure,NA,TRUE
+1796435,1796435,Germ cell tumor and no Covid vaccine exposure,NA,TRUE
+1796456,1796456,Etoposide allergy,NA,TRUE
