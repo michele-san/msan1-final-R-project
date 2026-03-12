@@ -3,3 +3,5 @@ Among patients with testicular germ cell cancer treated with etoposide, what is 
 
 Rationale:
 The rationale for this question comes from my clinical experience as a chemotherapy infusion nurse. Etoposide is not traditionally considered a highly reactive chemotherapy, but in our clinic we have noted that since the onset/increased prevalence of covid-19 vaccinations, we have seen an anecdotal 50% increase in etoposide hypersensitivity reactions (allergy). One of the providers in my clinic is interested in studying the relationship between covid-19 vaccines and etoposide allergy on the basis of the polysorbate 80 and polyethylene glycol that is present in most formulations of both etoposide and covid-19 vaccines. The hypothesis here is that vaccine exposure introduces the PEG or polysorbate 80 allergen, and a subsequent etoposide allergy is triggered due to IgE production and immune memory.
+
+This R script runs CohortGenerator, CohortDiagnostics, CohortIncidence, Characterization and CohortMethod. There is also a separate R script generating the cohorts as csv and sql files that aligns with what is used in the main R script.
